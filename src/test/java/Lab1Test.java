@@ -1,5 +1,6 @@
 
 import Util.ConnectionUtil;
+import Util.FileUtil;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
@@ -10,9 +11,8 @@ import java.sql.SQLException;
 
 import static org.junit.Assert.fail;
 
-public class CreateTableWithPKTest {
+public class Lab1Test {
 
-    private CreateTableWithPK createTableWithPK = new CreateTableWithPK();
 
     /**
      * The @After annotation runs after every test so that way we drop the tables to avoid conflicts in future tests
@@ -21,7 +21,7 @@ public class CreateTableWithPKTest {
     public void afterEach(){
         try {
             Connection connection = ConnectionUtil.getConnection();
-            String sql = "DROP TABLE song;";
+            String sql = "DROP TABLE Artist;";
             PreparedStatement ps = connection.prepareStatement(sql);
             ps.executeUpdate();
         } catch (SQLException e) {}
@@ -33,40 +33,49 @@ public class CreateTableWithPKTest {
     public void createTableSurrogateKeyTest(){
 
         try {
-            createTableWithPK.problem1();
-
             Connection connection = ConnectionUtil.getConnection();
-
-            //Notice that we are NOT manually adding a number for the primary key here. The db will do this for us because of the "SERIAL" datatype that we used.
-            String sql = "INSERT into song (id, Title, Artist) VALUES (1,'Let it Be', 'Beatles')";
-
+            String sql = FileUtil.parseSQLFile("src/main/lab1.sql");
+            if (sql.isEmpty()) {
+                Assert.fail("No sql statement written in lab1.sql.");
+            }
             PreparedStatement ps = connection.prepareStatement(sql);
-
             ps.executeUpdate();
-
-        } catch (SQLException e) {
-            System.out.println("problem1: " + e.getMessage() + '\n');
-            fail();
+        }catch (SQLException e) {
+            Assert.fail("There was an issue running your SQL statement in lab1.sql: "+e.getMessage());
         }
-
-
-
+        try{
+            Connection connection = ConnectionUtil.getConnection();
+            String sql2 = "INSERT into Artist (id, name) VALUES (1,'Peter Gabriel')";
+            PreparedStatement ps2 = connection.prepareStatement(sql2);
+            ps2.executeUpdate();
+        } catch (SQLException e) {
+            Assert.fail("There was an issue inserting a record into your table: "+e.getMessage());
+        }
     }
 
-
-
-
+    /**
+     * Testing the the records of the table are unique.
+     */
     @Test
     public void TestPrimaryKeyUniqueConstraint(){
 
         try {
-            createTableWithPK.problem1();
+            Connection connection = ConnectionUtil.getConnection();
+            String sql = FileUtil.parseSQLFile("src/main/lab1.sql");
+            if (sql.isEmpty()) {
+                Assert.fail("No sql statement written in lab1.sql.");
+            }
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.executeUpdate();
+        }catch (SQLException e) {
+            Assert.fail("There was an issue running your SQL statement in lab1.sql: "+e.getMessage());
+        }
+        try {
 
             Connection connection = ConnectionUtil.getConnection();
 
-            //Notice that we are NOT manually adding a number for the primary key here. The db will do this for us because of the "SERIAL" datatype that we used.
-            String sql = "INSERT into song (id, Title, Artist) VALUES (1,'Let it Be', 'Beatles');";
-            String sql2 = "INSERT into song (id, Title, Artist) VALUES (1,'Imagine', 'Beatles');";
+            String sql = "INSERT into Artist (id, name) VALUES (1,'Peter Gabriel');";
+            String sql2 = "INSERT into Artist (id, name) VALUES (1,'Kate Bush');";
 
             PreparedStatement ps = connection.prepareStatement(sql + sql2);
 
@@ -75,18 +84,10 @@ public class CreateTableWithPKTest {
 
         } catch (SQLException e) {
             if(!(e.getMessage().substring(0, "Unique index or primary key violation".length()).equals("Unique index or primary key violation"))){
-                Assert.fail(e.getMessage());
+                Assert.fail("There was an issue executing insert statements:"+ e.getMessage());
             }
         }
-
-
-        
     }
-
-
-
-
-
     /**
      * The @After annotation runs after every test so that way we drop the tables to avoid conflicts in future tests
      */
@@ -94,11 +95,11 @@ public class CreateTableWithPKTest {
     public void cleanup(){
         try {
             Connection connection = ConnectionUtil.getConnection();
-            String sql = "DROP TABLE songs;";
+            String sql = "DROP TABLE Artist;";
             PreparedStatement ps = connection.prepareStatement(sql);
             ps.executeUpdate();
         } catch (SQLException e) {
+
         }
     }
-
 }
